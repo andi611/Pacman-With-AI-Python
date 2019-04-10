@@ -194,7 +194,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
 			return self.evaluationFunction(gameState)
 
 		if Player > 0:
-			best_val = 999
+			best_val = float('inf')
 			actions = gameState.getLegalActions(Player)
 			
 			for action in actions:
@@ -209,7 +209,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
 			return best_val
 
 		else:
-			best_val = -999
+			best_val = -float('inf')
 			best_act = None
 			actions = gameState.getLegalActions(Player)
 			
@@ -233,7 +233,49 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 		  Returns the minimax action using self.depth and self.evaluationFunction
 		"""
 		"*** YOUR CODE HERE ***"
-		util.raiseNotDefined()
+		action = self.alpha_bete(gameState, 0, A=-float('inf'), B=float('inf'), Player=self.index)
+		return action
+
+
+	def alpha_bete(self, gameState, cur_depth, A, B, Player):
+
+		if cur_depth == self.depth:
+			return self.evaluationFunction(gameState)
+
+		if Player > 0:
+			actions = gameState.getLegalActions(Player)
+			v = float('inf')
+
+			for action in actions:
+				succ_state = gameState.generateSuccessor(Player, action)
+				if gameState.getNumAgents() - 1 > Player: 
+					v = min(v, self.alpha_bete(succ_state, cur_depth, A, B, Player+1))
+				else: 
+					v = min(v, self.alpha_bete(succ_state, cur_depth+1, A, B, self.index))
+				if A > v: return v
+				B = min(v, B) # take the least valuable action
+
+			if len(actions) == 0: v = self.evaluationFunction(gameState)
+			return v
+
+		else:
+			actions = gameState.getLegalActions(Player)
+			v = -float('inf')
+			act = {}
+
+			for action in actions:
+				succ_state = gameState.generateSuccessor(self.index, action)
+				v = max(v, self.alpha_bete(succ_state, cur_depth, A, B, Player+1))
+				if v > B: return v
+				A = max(v, A) # take the most valuable action
+				if str(A) not in act: act[str(A)] = action
+
+			if len(actions) == 0: v = self.evaluationFunction(gameState)
+			if cur_depth > 0: return v
+			else:
+				sorted_A = sorted(act.keys(), key=lambda x: float(x), reverse=True)
+				return act[sorted_A[0]]
+
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
 	"""
@@ -248,7 +290,44 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 		  legal moves.
 		"""
 		"*** YOUR CODE HERE ***"
-		util.raiseNotDefined()
+		action = self.expectiminimax(gameState, 0, self.index)
+		return action
+
+
+	def expectiminimax(self, gameState, cur_depth, Player):
+
+		if cur_depth == self.depth:
+			return self.evaluationFunction(gameState)
+
+		if Player > 0:
+			exp_val = 0
+			actions = gameState.getLegalActions(Player)
+			
+			for action in actions:
+				succ_state = gameState.generateSuccessor(Player, action)
+				if gameState.getNumAgents() - 1 > Player: 
+					val = self.expectiminimax(succ_state, cur_depth, Player+1)
+				else: 
+					val = self.expectiminimax(succ_state, cur_depth+1, self.index)
+				exp_val += (1/float(len(actions)) * val)
+
+			if len(actions) == 0: exp_val = self.evaluationFunction(gameState)
+			return exp_val
+
+		else:
+			best_val = -float('inf')
+			best_act = None
+			actions = gameState.getLegalActions(Player)
+			
+			for action in actions:
+				succ_state = gameState.generateSuccessor(self.index, action)
+				val = self.expectiminimax(succ_state, cur_depth, Player+1)
+				if val > best_val: best_act = action
+				best_val = max(val, best_val) # take the most valuable action
+
+			if len(actions) == 0: best_val = self.evaluationFunction(gameState)
+			return best_val if cur_depth > 0 else best_act
+
 
 def betterEvaluationFunction(currentGameState):
 	"""
